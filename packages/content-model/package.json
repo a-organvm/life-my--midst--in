@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@in-midst-my-life/schema": "workspace:*",
-    "minimatch": "10.2.4"
+    "minimatch": "10.2.5"
   },
   "devDependencies": {
     "@types/minimatch": "6.0.0",
