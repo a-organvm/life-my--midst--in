@@ -33,6 +33,7 @@ import { registerSearchRoutes } from './routes/search';
 import { registerDidRoutes } from './routes/did';
 import sbtRoutes from './routes/sbt';
 import marketplaceRoutes from './routes/marketplace';
+import academicRoutes from './routes/academic';
 import { registerIdentityRoutes } from './routes/identity';
 import { demoRoutes } from './routes/demo';
 import { registerGraphQLRoute } from './routes/graphql';
@@ -554,6 +555,7 @@ export function buildServer(options: ApiServerOptions = {}) {
     scope.register(registerArtifactRoutes);
     scope.register(sbtRoutes);
     scope.register(marketplaceRoutes);
+    scope.register(academicRoutes);
     scope.register(registerIntegrationRoutes);
     scope.register(registerSearchRoutes, {
       prefix: '/search',

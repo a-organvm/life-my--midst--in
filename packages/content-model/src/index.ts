@@ -98,6 +98,9 @@ export * from './compatibility';
 // Role-family taxonomy
 export * from './role-families';
 
+// Academic domain (role families + CV rendering)
+export * from './academic';
+
 // Tone analysis
 export * from './tone';
 

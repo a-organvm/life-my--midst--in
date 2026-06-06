@@ -26,10 +26,10 @@
     "@in-midst-my-life/core": "workspace:*",
     "@in-midst-my-life/schema": "workspace:*",
     "@opentelemetry/api": "^1.9.0",
-    "@opentelemetry/auto-instrumentations-node": "^0.69.0",
+    "@opentelemetry/auto-instrumentations-node": "^0.76.0",
     "@opentelemetry/exporter-trace-otlp-http": "^0.210.0",
     "@opentelemetry/resources": "^2.5.0",
-    "@opentelemetry/sdk-node": "^0.210.0",
+    "@opentelemetry/sdk-node": "^0.218.0",
     "@opentelemetry/sdk-trace-node": "^2.5.0",
     "@opentelemetry/semantic-conventions": "^1.39.0",
     "@scalar/fastify-api-reference": "1.44.15",
@@ -52,7 +52,7 @@
     "@types/ws": "8.18.1",
     "tsx": "^4.7.0",
     "typescript": "^5.3.3",
-    "vitest": "^4.0.18",
+    "vitest": "^4.1.0",
     "ws": "8.19.0"
   }
 }

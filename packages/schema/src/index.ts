@@ -18,6 +18,7 @@ export * from './verification';
 export * from './narrative';
 export * from './jobs';
 export * from './hunter-protocol';
+export * from './academic';
 export * from './collaboration';
 export * from './messaging';
 export * from './billing';

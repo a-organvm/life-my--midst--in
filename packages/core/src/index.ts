@@ -12,6 +12,7 @@ export * from './errors';
 export * from './jobs';
 export * from './search';
 export * from './hunter';
+export * from './academic';
 
 // Re-export types from server module for TypeScript consumers
 // (Types don't carry runtime dependencies, so safe to export from main entry)
