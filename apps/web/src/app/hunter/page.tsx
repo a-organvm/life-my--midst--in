@@ -1,6 +1,8 @@
 import HunterDashboard from '@/components/HunterDashboard';
 import Link from 'next/link';
 
+export const dynamic = 'force-dynamic';
+
 async function getProfile() {
   const apiUrl = process.env['API_URL'] || 'http://localhost:3001';
 

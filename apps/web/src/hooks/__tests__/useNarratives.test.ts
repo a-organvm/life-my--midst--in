@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
+import { renderHook, waitFor, act } from '@testing-library/react';
 import { useNarratives } from '../useNarratives';
 
 // Test mock interface - matches PersistedNarrativeBlock (id and content required)
@@ -174,7 +174,10 @@ describe('useNarratives', () => {
       expect(result.current.loading).toBe(false);
     });
 
-    const generated = await result.current.generateNarratives();
+    let generated: any;
+    await act(async () => {
+      generated = await result.current.generateNarratives();
+    });
     expect(generated).toBeDefined();
     expect(generated?.blocks?.length).toBeGreaterThan(0);
   });
@@ -215,9 +218,12 @@ describe('useNarratives', () => {
       expect(result.current.loading).toBe(false);
     });
 
-    const updated = await result.current.updateBlock('block-1', {
-      title: 'Updated Title',
-      weight: 90,
+    let updated: any;
+    await act(async () => {
+      updated = await result.current.updateBlock('block-1', {
+        title: 'Updated Title',
+        weight: 90,
+      });
     });
 
     expect(updated?.title).toBe('Updated Title');
@@ -248,7 +254,10 @@ describe('useNarratives', () => {
       expect(result.current.loading).toBe(false);
     });
 
-    const deleted = await result.current.deleteBlock('block-1');
+    let deleted: any;
+    await act(async () => {
+      deleted = await result.current.deleteBlock('block-1');
+    });
     expect(deleted).toBe(true);
   });
 
@@ -283,11 +292,14 @@ describe('useNarratives', () => {
       expect(result.current.loading).toBe(false);
     });
 
-    const saved = await result.current.saveNarratives(
-      mockNarrativeBlocks,
-      'Saved preamble',
-      'Saved disclaimer',
-    );
+    let saved: any;
+    await act(async () => {
+      saved = await result.current.saveNarratives(
+        mockNarrativeBlocks,
+        'Saved preamble',
+        'Saved disclaimer',
+      );
+    });
 
     expect(saved).toBeDefined();
   });
@@ -346,7 +358,10 @@ describe('useNarratives', () => {
     });
 
     // Reorder by moving block-2 to end
-    const reordered = result.current.reorderBlocks(['block-1', 'block-3', 'block-2']);
+    let reordered: any;
+    act(() => {
+      reordered = result.current.reorderBlocks(['block-1', 'block-3', 'block-2']);
+    });
     expect((reordered[2] as any).id).toBe('block-2');
   });
 

@@ -26,6 +26,7 @@ const nextConfig = {
 
   // Turbopack config (default bundler in Next.js 16)
   turbopack: {
+    root: require('path').join(__dirname, '../../'),
     resolveAlias: {
       'ssh2': { browser: '' },
       'cpu-features': { browser: '' },

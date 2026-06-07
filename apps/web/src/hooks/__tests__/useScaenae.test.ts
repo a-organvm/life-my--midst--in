@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
+import { renderHook, waitFor, act } from '@testing-library/react';
 import { useScaenae } from '../useScaenae';
 
 global.fetch = vi.fn();
@@ -248,11 +248,14 @@ describe('useScaenae', () => {
       expect(result.current.loading).toBe(false);
     });
 
-    const created = await result.current.createCustomScaena({
-      nomen: 'Workshop',
-      emoji: '🏗️',
-      description: 'Workshop stage',
-    } as any);
+    let created: any;
+    await act(async () => {
+      created = await result.current.createCustomScaena({
+        nomen: 'Workshop',
+        emoji: '🏗️',
+        description: 'Workshop stage',
+      } as any);
+    });
 
     expect(created).toBeDefined();
     expect((created as any)?.name).toBe('Workshop');
@@ -278,7 +281,10 @@ describe('useScaenae', () => {
       expect(result.current.loading).toBe(false);
     });
 
-    const deleted = await result.current.deleteCustomScaena('scaena-custom-1');
+    let deleted: any;
+    await act(async () => {
+      deleted = await result.current.deleteCustomScaena('scaena-custom-1');
+    });
     expect(deleted).toBe(true);
   });
 

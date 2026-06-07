@@ -10,6 +10,7 @@ import { startMetricsServer } from './metrics-server';
 import Fastify, { type FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
+import fastifyWebsocket from '@fastify/websocket';
 import rawBody from 'fastify-raw-body';
 import { Pool } from 'pg';
 import { register, httpRequestsTotal, httpRequestDuration, activeConnections } from './metrics';
@@ -36,6 +37,7 @@ import marketplaceRoutes from './routes/marketplace';
 import academicRoutes from './routes/academic';
 import { registerIdentityRoutes } from './routes/identity';
 import { demoRoutes } from './routes/demo';
+import { registerWebsocketRoutes } from './routes/websocket';
 import { registerGraphQLRoute } from './routes/graphql';
 import { InMemoryPubSub } from './services/pubsub';
 import type { ProfileRepo } from './repositories/profiles';
@@ -226,6 +228,11 @@ export function buildServer(options: ApiServerOptions = {}) {
   fastify.register(rawBody as any, {
     global: false, // Only for specific routes
     runFirst: true,
+  });
+
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any -- Fastify plugin type mismatch
+  fastify.register(fastifyWebsocket as any, {
+    options: { maxPayload: 1048576 } // 1MB limit
   });
 
   // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any -- Fastify plugin type mismatch
@@ -578,6 +585,8 @@ export function buildServer(options: ApiServerOptions = {}) {
       jwtAuth,
       disableAuth: options.disableAuth,
     });
+
+    scope.register(registerWebsocketRoutes);
 
     // Token revocation endpoint (ADR-010)
     if (jwtAuth) {

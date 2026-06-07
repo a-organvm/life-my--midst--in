@@ -198,7 +198,7 @@ describe('usePersonae', () => {
 
     expect(result.current.selectedPersonaId).toBe('persona-1');
 
-    act(() => {
+    await act(async () => {
       result.current.selectPersona('persona-2');
     });
 
@@ -272,13 +272,16 @@ describe('usePersonae', () => {
       expect(result.current.loading).toBe(false);
     });
 
-    const newPersona = await result.current.addPersona({
-      nomen: 'Sophistes',
-      everyday_name: 'Philosopher',
-      role_vector: 'Thinks deeply',
-      tone_register: 'Contemplative',
-      visibility_scope: ['Academica'],
-      active: true,
+    let newPersona: any;
+    await act(async () => {
+      newPersona = await result.current.addPersona({
+        nomen: 'Sophistes',
+        everyday_name: 'Philosopher',
+        role_vector: 'Thinks deeply',
+        tone_register: 'Contemplative',
+        visibility_scope: ['Academica'],
+        active: true,
+      });
     });
 
     expect(newPersona).toBeDefined();
@@ -317,8 +320,11 @@ describe('usePersonae', () => {
       expect(result.current.loading).toBe(false);
     });
 
-    const updated = await result.current.updatePersona('persona-1', {
-      everyday_name: 'Senior Engineer',
+    let updated: any;
+    await act(async () => {
+      updated = await result.current.updatePersona('persona-1', {
+        everyday_name: 'Senior Engineer',
+      });
     });
 
     expect(updated?.everyday_name).toBe('Senior Engineer');
@@ -350,7 +356,10 @@ describe('usePersonae', () => {
       expect(result.current.loading).toBe(false);
     });
 
-    const deleted = await result.current.deletePersona('persona-1');
+    let deleted: any;
+    await act(async () => {
+      deleted = await result.current.deletePersona('persona-1');
+    });
     expect(deleted).toBe(true);
   });
 

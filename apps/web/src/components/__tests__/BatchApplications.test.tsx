@@ -75,11 +75,14 @@ describe('BatchApplications', () => {
     } as Response);
   });
 
-  it('renders loading state initially', () => {
+  it('renders loading state initially', async () => {
     render(<BatchApplications {...defaultProps} />);
     // Component shows loading animation initially
     const skeletons = document.querySelectorAll('.animate-pulse');
     expect(skeletons.length).toBeGreaterThanOrEqual(0);
+    await waitFor(() => {
+      expect(screen.getByText(/Total Jobs/i)).toBeInTheDocument();
+    });
   });
 
   it('displays batch applications header', async () => {

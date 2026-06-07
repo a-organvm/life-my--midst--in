@@ -93,11 +93,7 @@ export async function registerGraphQLRoute(
   const isProduction = process.env['NODE_ENV'] === 'production';
 
   // ──── WebSocket transport for subscriptions ─────────────────────────
-  // Register @fastify/websocket to handle upgrade requests
-  // eslint-disable-next-line @typescript-eslint/no-require-imports -- CJS plugin
-  const websocket = require('@fastify/websocket') as typeof import('@fastify/websocket');
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any -- Fastify plugin type mismatch
-  await fastify.register(websocket.default as any);
+  // @fastify/websocket is already registered globally in index.ts
 
   // graphql-ws server handles the subscription protocol over WebSocket.
   // We use require() for CJS resolution and supply onSubscribe to perform

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
+import { renderHook, waitFor, act } from '@testing-library/react';
 import { useAetas } from '../useAetas';
 
 // Test mock interface - flexible for legacy/extended test properties
@@ -195,7 +195,10 @@ describe('useAetas', () => {
       expect(result.current.loading).toBe(false);
     });
 
-    const added = await result.current.addAetas!('aetas-3' as any);
+    let added: any;
+    await act(async () => {
+      added = await result.current.addAetas!('aetas-3' as any);
+    });
     expect(added).toBeDefined();
   });
 
@@ -234,9 +237,12 @@ describe('useAetas', () => {
       expect(result.current.loading).toBe(false);
     });
 
-    const updated = await result.current.updateAetas!('aetas-1', {
-      endDate: new Date('2024-06-01').toISOString(),
-    } as any);
+    let updated: any;
+    await act(async () => {
+      updated = await result.current.updateAetas!('aetas-1', {
+        endDate: new Date('2024-06-01').toISOString(),
+      } as any);
+    });
     expect(updated).toBeDefined();
     expect((updated as any)?.endDate).toBeDefined();
   });
@@ -267,7 +273,10 @@ describe('useAetas', () => {
       expect(result.current.loading).toBe(false);
     });
 
-    const deleted = await result.current.deleteAetas!('aetas-1');
+    let deleted: any;
+    await act(async () => {
+      deleted = await result.current.deleteAetas!('aetas-1');
+    });
     expect(deleted).toBe(true);
   });
 

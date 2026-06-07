@@ -50,10 +50,11 @@ export default [
 
   // Test files
   {
-    files: ['**/__tests__/**/*.ts', '**/__tests__/**/*.tsx'],
+    files: ['**/__tests__/**/*.ts', '**/__tests__/**/*.tsx', '**/test/**/*.ts', '**/test/**/*.tsx'],
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/require-await': 'off',
+      'require-await': 'off',
     },
   },
 ];

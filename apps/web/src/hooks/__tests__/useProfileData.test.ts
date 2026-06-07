@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
+import { renderHook, waitFor, act } from '@testing-library/react';
 import { useProfileData } from '../useProfileData';
 import type { CVEntry } from '@in-midst-my-life/schema';
 
@@ -131,7 +131,9 @@ describe('useProfileData', () => {
     const initialName = (result.current.profile as any)?.name;
 
     // Call refetch
-    await result.current.refetch();
+    await act(async () => {
+      await result.current.refetch();
+    });
 
     await waitFor(() => {
       expect((result.current.profile as any)?.name).not.toBe(initialName);
@@ -171,9 +173,12 @@ describe('useProfileData', () => {
       expect(result.current.loading).toBe(false);
     });
 
-    const newEntry = await result.current.addEntry({
-      type: 'experience',
-      content: 'New entry',
+    let newEntry: any;
+    await act(async () => {
+      newEntry = await result.current.addEntry({
+        type: 'experience',
+        content: 'New entry',
+      });
     });
 
     expect(newEntry).toBeDefined();
@@ -213,9 +218,12 @@ describe('useProfileData', () => {
       expect(result.current.loading).toBe(false);
     });
 
-    const updated = await result.current.updateEntry('entry-1', {
-      type: 'achievement',
-      content: 'Updated entry',
+    let updated: any;
+    await act(async () => {
+      updated = await result.current.updateEntry('entry-1', {
+        type: 'achievement',
+        content: 'Updated entry',
+      });
     });
 
     expect(updated).toBeDefined();
@@ -248,7 +256,10 @@ describe('useProfileData', () => {
       expect(result.current.loading).toBe(false);
     });
 
-    const deleted = await result.current.deleteEntry('entry-1');
+    let deleted: any;
+    await act(async () => {
+      deleted = await result.current.deleteEntry('entry-1');
+    });
 
     expect(deleted).toBe(true);
   });
@@ -282,9 +293,11 @@ describe('useProfileData', () => {
       expect(result.current.loading).toBe(false);
     });
 
-    await result.current.filterEntries({
-      includePersonae: ['persona-1'],
-      minPriority: 70,
+    await act(async () => {
+      await result.current.filterEntries({
+        includePersonae: ['persona-1'],
+        minPriority: 70,
+      });
     });
 
     // Verify filter was called
