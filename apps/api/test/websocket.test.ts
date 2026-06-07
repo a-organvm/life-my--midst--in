@@ -16,45 +16,127 @@ describe('Websocket Routes', () => {
     await app.close();
   });
 
-  it('connects to /v1/ws and broadcasts messages', async () => {
-    const address = app.server.address() as any;
-    const port = address.port;
+  function getPort(): number {
+    return (app.server.address() as any).port;
+  }
 
-    const client1 = new WebSocket(`ws://127.0.0.1:${port}/v1/ws`);
-    const client2 = new WebSocket(`ws://127.0.0.1:${port}/v1/ws`);
-
+  async function connectWithCollect(
+    port: number,
+    userId: string,
+  ): Promise<{ ws: WebSocket.WebSocket; messages: any[] }> {
+    const ws = new WebSocket(`ws://127.0.0.1:${port}/v1/ws?userId=${encodeURIComponent(userId)}`);
+    const messages: any[] = [];
     await new Promise<void>((resolve) => {
-      let openCount = 0;
-      const onOpen = () => {
-        openCount++;
-        if (openCount === 2) resolve();
-      };
-      client1.on('open', onOpen);
-      client2.on('open', onOpen);
+      ws.on('open', () => {
+        ws.on('message', (data) => {
+          const str =
+            typeof data === 'string'
+              ? data
+              : Buffer.from(data as ArrayBuffer | Buffer[]).toString();
+          messages.push(JSON.parse(str));
+        });
+        resolve();
+      });
     });
+    return { ws, messages };
+  }
 
-    const messagesReceived: any[] = [];
-    client2.on('message', (data) => {
-      const str =
-        typeof data === 'string' ? data : Buffer.from(data as ArrayBuffer | Buffer[]).toString();
-      messagesReceived.push(JSON.parse(str));
-    });
+  function delay(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
 
-    client1.send(
-      JSON.stringify({ type: 'user-typing', userId: 'user-123', payload: { thread: '1' } }),
+  it('connects to /v1/ws and broadcasts user-typing messages', async () => {
+    const port = getPort();
+
+    const { ws: c1, messages: m1 } = await connectWithCollect(port, 'typing-test-a');
+    const { ws: c2, messages: m2 } = await connectWithCollect(port, 'typing-test-b');
+
+    // Clear initial presence messages
+    await delay(50);
+    m1.length = 0;
+    m2.length = 0;
+
+    // Send typing from c2; c1 should receive it
+    c2.send(
+      JSON.stringify({ type: 'user-typing', userId: 'typing-test-b', payload: { thread: '1' } }),
     );
 
-    // Wait for message to propagate
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    await delay(100);
 
-    expect(messagesReceived).toHaveLength(1);
-    expect(messagesReceived[0]).toEqual({
-      type: 'user-typing',
-      userId: 'user-123',
-      payload: { thread: '1' },
+    expect(m1.filter((m) => m.type === 'user-typing')).toEqual([
+      { type: 'user-typing', userId: 'typing-test-b', payload: { thread: '1' } },
+    ]);
+    // c2 should not receive its own message
+    expect(m2.filter((m) => m.type === 'user-typing')).toEqual([]);
+
+    c1.close();
+    c2.close();
+    await delay(50);
+  });
+
+  it('broadcasts presence online when user connects', async () => {
+    const port = getPort();
+
+    const { ws: c1, messages: m1 } = await connectWithCollect(port, 'presence-online-a');
+    const { ws: c2, messages: m2 } = await connectWithCollect(port, 'presence-online-b');
+
+    // Flush initial connect messages
+    await delay(50);
+    m1.length = 0;
+    m2.length = 0;
+
+    // Connect a third user
+    const { ws: c3 } = await connectWithCollect(port, 'presence-online-c');
+    await delay(100);
+
+    // c1 and c2 should see the online event for c3
+    const c1Presence = m1.filter((m) => m.type === 'presence');
+    const c2Presence = m2.filter((m) => m.type === 'presence');
+    expect(c1Presence.length).toBeGreaterThanOrEqual(1);
+    expect(c2Presence.length).toBeGreaterThanOrEqual(1);
+    expect(c1Presence[0]).toMatchObject({
+      type: 'presence',
+      userId: 'presence-online-c',
+      status: 'online',
+    });
+    expect(c2Presence[0]).toMatchObject({
+      type: 'presence',
+      userId: 'presence-online-c',
+      status: 'online',
     });
 
-    client1.close();
-    client2.close();
+    c1.close();
+    c2.close();
+    c3.close();
+    await delay(50);
+  });
+
+  it('broadcasts presence offline when user disconnects', async () => {
+    const port = getPort();
+
+    const { ws: c1, messages: m1 } = await connectWithCollect(port, 'presence-offline-a');
+    const { ws: c2, messages: m2 } = await connectWithCollect(port, 'presence-offline-b');
+
+    // Flush initial messages
+    await delay(50);
+    m1.length = 0;
+    m2.length = 0;
+
+    c1.close();
+    await delay(100);
+
+    // c2 should see offline event for c1
+    const offlineMessages = m2.filter((m) => m.type === 'presence' && m.status === 'offline');
+    expect(offlineMessages.length).toBeGreaterThanOrEqual(1);
+    expect(offlineMessages[0]).toMatchObject({
+      type: 'presence',
+      userId: 'presence-offline-a',
+      status: 'offline',
+    });
+    // c1 should not receive its own offline
+    expect(m1.filter((m) => m.type === 'presence')).toEqual([]);
+
+    c2.close();
+    await delay(50);
   });
 });

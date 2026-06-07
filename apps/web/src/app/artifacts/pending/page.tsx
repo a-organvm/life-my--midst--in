@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Artifact } from '@in-midst-my-life/schema';
 import { ArtifactGrid } from '../../../components/artifacts/ArtifactGrid';
@@ -17,21 +17,12 @@ export default function PendingArtifactsPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [filterType, setFilterType] = useState<string>('all');
 
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const pid = urlParams.get('profileId') || '';
-    setProfileId(pid);
-    if (pid) {
-      void loadArtifacts(pid);
-    }
-  }, []);
-
-  const loadArtifacts = async (pid: string) => {
+  const loadArtifacts = useCallback(async (pid: string) => {
     setLoading(true);
     try {
       const url = `${apiBase}/profiles/${pid}/artifacts/pending`;
       const response = await fetch(url);
-      const data = await response.json();
+      const data = (await response.json()) as { ok: boolean; data: Artifact[] };
 
       if (data.ok) {
         setArtifacts(data.data || []);
@@ -41,7 +32,16 @@ export default function PendingArtifactsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const pid = urlParams.get('profileId') || '';
+    setProfileId(pid);
+    if (pid) {
+      void loadArtifacts(pid);
+    }
+  }, [loadArtifacts]);
 
   const handleSelectArtifact = (artifactId: string) => {
     router.push(`/artifacts/${artifactId}?profileId=${profileId}`);

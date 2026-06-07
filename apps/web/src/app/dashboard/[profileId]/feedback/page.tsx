@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   AlertCircle,
   CheckCircle2,
@@ -63,19 +63,14 @@ const CATEGORY_ICONS = {
 export default function FeedbackPage({ params }: { params: { profileId: string } }) {
   const [feedbackList, setFeedbackList] = useState<Feedback[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [_showForm, setShowForm] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>('all');
 
-  useEffect(() => {
-    void loadFeedback();
-  }, [params.profileId]);
-
-  const loadFeedback = async () => {
+  const loadFeedback = useCallback(async () => {
     try {
       setIsLoading(true);
       const response = await fetch(`/api/feedback?limit=100&offset=0`);
       if (response.ok) {
-        const data = await response.json();
+        const data = (await response.json()) as { items: Feedback[] };
         setFeedbackList(data.items || []);
       }
     } catch (error) {
@@ -83,7 +78,11 @@ export default function FeedbackPage({ params }: { params: { profileId: string }
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    void loadFeedback();
+  }, [params.profileId, loadFeedback]);
 
   const filteredFeedback = feedbackList.filter(
     (f) => filterStatus === 'all' || f.status === filterStatus,
@@ -160,7 +159,6 @@ export default function FeedbackPage({ params }: { params: { profileId: string }
                 profileId={params.profileId}
                 userId="current-user-id" // In production, use actual user ID from auth
                 onSubmitSuccess={() => {
-                  setShowForm(false);
                   void loadFeedback();
                 }}
               />
