@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { CloudStorageIntegration } from '@in-midst-my-life/schema';
 import { IntegrationCard } from '../../../components/artifacts/IntegrationCard';
 import { OAuthFlowHandler } from '../../../components/artifacts/OAuthFlowHandler';
@@ -17,20 +17,11 @@ export default function IntegrationsPage() {
     'google_drive',
   );
 
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const pid = urlParams.get('profileId') || '';
-    setProfileId(pid);
-    if (pid) {
-      void loadIntegrations(pid);
-    }
-  }, []);
-
-  const loadIntegrations = async (pid: string) => {
+  const loadIntegrations = useCallback(async (pid: string) => {
     setLoading(true);
     try {
       const response = await fetch(`${apiBase}/profiles/${pid}/integrations`);
-      const data = await response.json();
+      const data = (await response.json()) as { ok: boolean; data: CloudStorageIntegration[] };
 
       if (data.ok) {
         setIntegrations(data.data || []);
@@ -40,7 +31,16 @@ export default function IntegrationsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const pid = urlParams.get('profileId') || '';
+    setProfileId(pid);
+    if (pid) {
+      void loadIntegrations(pid);
+    }
+  }, [loadIntegrations]);
 
   const handleRefresh = async (integrationId: string) => {
     try {

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { MessageCircle, Send, Search, Archive, Plus, Check } from 'lucide-react';
 import Link from 'next/link';
+import { useWebSocketMessaging } from '../hooks/useWebSocketMessaging';
 
 interface Thread {
   id: string;
@@ -32,12 +33,53 @@ export default function MessageInbox({ userId }: { userId: string }) {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [showArchived, setShowArchived] = useState(false);
-  const [selectedThreadId, _setSelectedThreadId] = useState<string | null>(null);
+  const [selectedThreadId] = useState<string | null>(null);
+
+  const { isUserOnline } = useWebSocketMessaging(null, { userId });
+
+  const isThreadParticipantOnline = useCallback(
+    (thread: Thread) => {
+      const partnerId = thread.participantIds.find((pid) => pid !== userId);
+      return partnerId ? isUserOnline(partnerId) : false;
+    },
+    [userId, isUserOnline],
+  );
+
+  const loadThreads = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch('/api/messages/threads');
+      if (response.ok) {
+        const data = (await response.json()) as { threads: Thread[] };
+        setThreads(data.threads || []);
+      }
+    } catch (error) {
+      console.error('Failed to load threads:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const loadNotifications = useCallback(async () => {
+    try {
+      const response = await fetch('/api/notifications');
+      if (response.ok) {
+        const data = (await response.json()) as {
+          notifications: Notification[];
+          unreadCount: number;
+        };
+        setNotifications(data.notifications || []);
+        setUnreadCount(data.unreadCount || 0);
+      }
+    } catch (error) {
+      console.error('Failed to load notifications:', error);
+    }
+  }, []);
 
   useEffect(() => {
     void loadThreads();
     void loadNotifications();
-  }, [userId]);
+  }, [userId, loadThreads, loadNotifications]);
 
   const filterThreads = useCallback(() => {
     let filtered = threads;
@@ -62,34 +104,6 @@ export default function MessageInbox({ userId }: { userId: string }) {
   useEffect(() => {
     filterThreads();
   }, [filterThreads]);
-
-  const loadThreads = async () => {
-    try {
-      setIsLoading(true);
-      const response = await fetch('/api/messages/threads');
-      if (response.ok) {
-        const data = await response.json();
-        setThreads(data.threads || []);
-      }
-    } catch (error) {
-      console.error('Failed to load threads:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const loadNotifications = async () => {
-    try {
-      const response = await fetch('/api/notifications');
-      if (response.ok) {
-        const data = await response.json();
-        setNotifications(data.notifications || []);
-        setUnreadCount(data.unreadCount || 0);
-      }
-    } catch (error) {
-      console.error('Failed to load notifications:', error);
-    }
-  };
 
   const handleArchiveThread = async (threadId: string) => {
     // Update UI optimistically
@@ -215,6 +229,12 @@ export default function MessageInbox({ userId }: { userId: string }) {
                     <h3 className="font-semibold text-gray-900 truncate">
                       {thread.participantName}
                     </h3>
+                    {isThreadParticipantOnline(thread) && (
+                      <span
+                        className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0"
+                        title="Online"
+                      />
+                    )}
                     {thread.unreadCount > 0 && (
                       <span className="inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-blue-600 rounded-full">
                         {thread.unreadCount}

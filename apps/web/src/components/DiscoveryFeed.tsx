@@ -47,9 +47,24 @@ export default function DiscoveryFeed() {
     'Marketing',
   ];
 
+  const loadProfiles = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch('/api/public-profiles');
+      if (response.ok) {
+        const data = (await response.json()) as { profiles: DiscoveryCard[] };
+        setProfiles(data.profiles || []);
+      }
+    } catch (error) {
+      console.error('Failed to load profiles:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     void loadProfiles();
-  }, []);
+  }, [loadProfiles]);
 
   const filterProfiles = useCallback(() => {
     let filtered = profiles;
@@ -90,21 +105,6 @@ export default function DiscoveryFeed() {
   useEffect(() => {
     filterProfiles();
   }, [filterProfiles]);
-
-  const loadProfiles = async () => {
-    try {
-      setIsLoading(true);
-      const response = await fetch('/api/public-profiles');
-      if (response.ok) {
-        const data = await response.json();
-        setProfiles(data.profiles || []);
-      }
-    } catch (error) {
-      console.error('Failed to load profiles:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleExpertiseToggle = (expertise: string) => {
     setFilters((prev) => ({

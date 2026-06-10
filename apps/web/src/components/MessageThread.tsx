@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Send, MoreVertical, ArrowLeft } from 'lucide-react';
+import { useWebSocketMessaging } from '../hooks/useWebSocketMessaging';
 
 interface Message {
   id: string;
@@ -16,23 +17,36 @@ interface Message {
 interface MessageThreadProps {
   threadId: string;
   participantName: string;
+  participantId?: string;
   onBack: () => void;
 }
 
-export default function MessageThread({ threadId, participantName, onBack }: MessageThreadProps) {
+export default function MessageThread({
+  threadId,
+  participantName,
+  participantId,
+  onBack,
+}: MessageThreadProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
-  const [isTyping, setIsTyping] = useState(false);
+  const [localTyping, setLocalTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const localTypingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const { connected, typingUserIds, isUserOnline, sendTyping } = useWebSocketMessaging(threadId, {
+    userId: 'current-user',
+  });
+
+  const isParticipantOnline = participantId ? isUserOnline(participantId) : false;
 
   const loadMessages = useCallback(async () => {
     try {
       setIsLoading(true);
       const response = await fetch(`/api/messages/threads/${threadId}`);
       if (response.ok) {
-        const data = await response.json();
+        const data = (await response.json()) as { messages: Message[] };
         setMessages(data.messages || []);
       }
     } catch (error) {
@@ -42,6 +56,10 @@ export default function MessageThread({ threadId, participantName, onBack }: Mes
     }
   }, [threadId]);
 
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   useEffect(() => {
     void loadMessages();
   }, [loadMessages]);
@@ -49,10 +67,6 @@ export default function MessageThread({ threadId, participantName, onBack }: Mes
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
 
   const handleSendMessage = async (e: React.SyntheticEvent) => {
     e.preventDefault();
@@ -73,9 +87,8 @@ export default function MessageThread({ threadId, participantName, onBack }: Mes
       });
 
       if (response.ok) {
-        const sentMessage = await response.json();
+        const sentMessage = (await response.json()) as { id: string };
 
-        // Add to UI optimistically
         setMessages((prev) => [
           ...prev,
           {
@@ -100,12 +113,17 @@ export default function MessageThread({ threadId, participantName, onBack }: Mes
   const handleTyping = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setNewMessage(e.target.value);
 
-    // Emit typing indicator (would send to WebSocket in production)
-    if (!isTyping && e.target.value) {
-      setIsTyping(true);
-      // Send typing event
-      setTimeout(() => setIsTyping(false), 3000);
+    if (!localTyping && e.target.value && connected) {
+      setLocalTyping(true);
+      sendTyping();
     }
+
+    if (localTypingTimerRef.current) {
+      clearTimeout(localTypingTimerRef.current);
+    }
+    localTypingTimerRef.current = setTimeout(() => {
+      setLocalTyping(false);
+    }, 3000);
   };
 
   const formatTime = (dateString: string) => {
@@ -130,7 +148,9 @@ export default function MessageThread({ threadId, participantName, onBack }: Mes
           </button>
           <div>
             <h2 className="font-bold text-gray-900">{participantName}</h2>
-            <p className="text-xs text-gray-600">Active now</p>
+            <p className="text-xs text-gray-600">
+              {connected ? (isParticipantOnline ? 'Active now' : 'Offline') : 'Connecting...'}
+            </p>
           </div>
         </div>
 
@@ -164,7 +184,7 @@ export default function MessageThread({ threadId, participantName, onBack }: Mes
               index === 0 ||
               (prevMessage &&
                 new Date(prevMessage.createdAt).getTime() - new Date(message.createdAt).getTime() >
-                  300000); // 5 minutes
+                  300000);
 
             return (
               <div key={message.id}>
@@ -202,7 +222,7 @@ export default function MessageThread({ threadId, participantName, onBack }: Mes
           })
         )}
 
-        {isTyping && (
+        {typingUserIds.length > 0 && (
           <div className="flex gap-3">
             <div className="w-8 h-8 rounded-full bg-blue-200 flex-shrink-0"></div>
             <div className="bg-gray-100 px-4 py-2 rounded-lg">

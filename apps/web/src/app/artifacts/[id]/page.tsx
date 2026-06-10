@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import type { Artifact } from '@in-midst-my-life/schema';
 import { ArtifactPreview } from '../../../components/artifacts/ArtifactPreview';
@@ -17,20 +17,11 @@ export default function ArtifactDetailPage() {
   const [artifact, setArtifact] = useState<Artifact | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const pid = urlParams.get('profileId') || '';
-    setProfileId(pid);
-    if (pid && params['id']) {
-      void loadArtifact(pid, params['id'] as string);
-    }
-  }, [params]);
-
-  const loadArtifact = async (pid: string, artifactId: string) => {
+  const loadArtifact = useCallback(async (pid: string, artifactId: string) => {
     setLoading(true);
     try {
       const response = await fetch(`${apiBase}/profiles/${pid}/artifacts/${artifactId}`);
-      const data = await response.json();
+      const data = (await response.json()) as { ok: boolean; data: Artifact };
 
       if (data.ok) {
         setArtifact(data.data);
@@ -40,7 +31,16 @@ export default function ArtifactDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const pid = urlParams.get('profileId') || '';
+    setProfileId(pid);
+    if (pid && params['id']) {
+      void loadArtifact(pid, params['id'] as string);
+    }
+  }, [params, loadArtifact]);
 
   const handleSave = async (updates: Partial<Artifact>) => {
     if (!artifact) return;
@@ -52,7 +52,7 @@ export default function ArtifactDetailPage() {
         body: JSON.stringify(updates),
       });
 
-      const data = await response.json();
+      const data = (await response.json()) as { ok: boolean };
       if (data.ok) {
         setArtifact({ ...artifact, ...updates });
       }
