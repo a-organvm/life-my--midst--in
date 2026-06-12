@@ -32,7 +32,7 @@ function broadcastToAll(fastify: Parameters<FastifyPluginAsync>[0], message: str
 export const registerWebsocketRoutes: FastifyPluginAsync = (fastify) => {
   fastify.get('/ws', { websocket: true }, (connection, request) => {
     const userId =
-      ((request.query as Record<string, string | undefined>).userId as string) || 'anonymous';
+      ((request.query as Record<string, string | undefined>)['userId'] as string) || 'anonymous';
 
     // Register user connection
     if (!connectedUsers.has(userId)) {
