@@ -477,9 +477,9 @@ pnpm --filter api seed
 
 The system supports multiple deployment targets with one-click options:
 
+- **Vercel (Activated)** — Production Endpoint: [https://life-my-midst-nn3m5m54g-iviivi.vercel.app](https://life-my-midst-nn3m5m54g-iviivi.vercel.app)
 - **Railway** — Template-based deployment with managed PostgreSQL
 - **Render** — Blueprint deployment with auto-scaling
-- **Vercel** — Frontend deployment with serverless API functions
 - **Docker Compose** — Self-hosted with full infrastructure control
 - **Helm** — Kubernetes deployment with configurable replicas and resource limits
 
